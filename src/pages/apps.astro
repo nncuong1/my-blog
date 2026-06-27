@@ -1,0 +1,113 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+import Hr from "@components/Hr.astro";
+
+export const prerender = true;
+---
+
+<Layout title="Apps">
+  <Header activeNav="apps" />
+  <main id="main-content">
+    <section id="apps-header">
+      <h1>Apps</h1>
+      <p>Projects and tools I've built. More coming soon.</p>
+    </section>
+
+    <Hr />
+
+    <section id="apps-content">
+      <div class="apps-grid">
+        <!--
+          TODO: Add your apps here. Copy this card and fill in the details.
+
+        <div class="app-card">
+          <h3><a href="https://example.com/" target="_blank" rel="noopener noreferrer">App Name</a></h3>
+          <p class="app-description">A short description of what the app does.</p>
+
+          <div class="app-stats">
+            <div class="stat">
+              <span class="stat-label">Launched:</span>
+              <span class="stat-value">2026</span>
+            </div>
+          </div>
+
+          <div class="app-links">
+            <a href="https://example.com/" target="_blank" rel="noopener noreferrer" class="app-link">
+              Visit Website ↗
+            </a>
+          </div>
+        </div>
+        -->
+        <p class="no-apps">Nothing here yet — check back later.</p>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  #apps-header {
+    @apply pb-6 pt-8;
+  }
+  #apps-header h1 {
+    @apply text-3xl font-bold sm:text-5xl;
+  }
+  #apps-header p {
+    @apply my-4 text-lg;
+  }
+
+  #apps-content {
+    @apply pb-6 pt-6;
+  }
+
+  .apps-grid {
+    @apply grid gap-6 sm:grid-cols-2;
+  }
+
+  .app-card {
+    @apply rounded-lg border border-skin-line bg-skin-card p-6;
+  }
+
+  .app-card h3 {
+    @apply mb-2 text-xl font-semibold text-skin-base;
+  }
+
+  .app-description {
+    @apply mb-4 text-skin-base/80;
+  }
+
+  .app-stats {
+    @apply mb-4 space-y-2;
+  }
+
+  .stat {
+    @apply flex justify-between;
+  }
+
+  .stat-label {
+    @apply text-sm text-skin-base/70;
+  }
+
+  .stat-value {
+    @apply text-sm font-medium text-skin-base;
+  }
+
+  .app-links {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .app-link {
+    @apply inline-flex items-center gap-1 rounded bg-skin-accent px-3 py-2 text-sm font-medium text-skin-inverted transition-colors hover:bg-skin-accent/90;
+  }
+
+  .app-link-secondary {
+    @apply border border-skin-line bg-skin-fill text-skin-base hover:bg-skin-card;
+  }
+
+  .no-apps {
+    @apply col-span-full text-center text-lg text-skin-base/70;
+  }
+</style>

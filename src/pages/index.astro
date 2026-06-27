@@ -1,26 +1,144 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { getCollection } from "astro:content";
+import Layout from "@layouts/Layout.astro";
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+import LinkButton from "@components/LinkButton.astro";
+import Hr from "@components/Hr.astro";
+import Card from "@components/Card";
+import Socials from "@components/Socials.astro";
+import getSortedPosts from "@utils/getSortedPosts";
+import slugify from "@utils/slugify";
+import { SOCIALS } from "@config";
+
+const posts = await getCollection("posts");
+
+const sortedPosts = getSortedPosts(posts);
+const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
+
+const socialCount = SOCIALS.filter(social => social.active).length;
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>👀 Hi, I'm Cuong.</h1>
-			<p>
-				I'm a backend software engineer who is passionate about computer science, distributed systems, and open-source software. Whenever I learn something interesting—whether it's a JVM optimization, a distributed systems paper, or a design pattern—I like to dig into the details rather than simply memorizing the conclusions.
-			</p>
-			<p>
-				This blog is my digital notebook. I'll use it to document what I learn, share technical deep dives, summarize books and research papers, and occasionally write about lessons I've learned from building production systems. My hope is that writing helps me think more clearly and that these notes are useful to others on the same journey.
-			</p>
-		</main>
-		<Footer />
-	</body>
-</html>
+<Layout>
+  <Header />
+  <main id="main-content">
+    <section id="hero">
+      <h1 class="mr-2">👀 Hi, I'm Cuong.</h1>
+      <p>
+        I'm a backend software engineer passionate about computer science,
+        distributed systems, and open-source software. Whenever I learn
+        something interesting—whether it's a JVM optimization, a distributed
+        systems paper, or a design pattern—I like to dig into the details rather
+        than simply memorizing the conclusions.
+      </p>
+      <p>
+        This blog is my digital notebook: technical deep dives, summaries of
+        books and research papers, and lessons learned from building production
+        systems. My hope is that writing helps me think more clearly and that
+        these notes are useful to others on the same journey.
+      </p>
+
+      {
+        // only display if at least one social link is enabled
+        socialCount > 0 && (
+          <div class="social-wrapper">
+            <div class="social-links">Social Links:</div>
+            <Socials />
+          </div>
+        )
+      }
+    </section>
+
+    <Hr />
+
+    {
+      featuredPosts.length > 0 && (
+        <>
+          <section id="featured">
+            <h2>Featured</h2>
+            <ul>
+              {featuredPosts.map(({ data }) => (
+                <Card
+                  href={`/posts/${slugify(data)}/`}
+                  frontmatter={data}
+                  secHeading={false}
+                />
+              ))}
+            </ul>
+          </section>
+          <Hr />
+        </>
+      )
+    }
+
+    <section id="recent-posts">
+      <h2>Recent Posts</h2>
+      <ul>
+        {
+          sortedPosts
+            .filter(({ data }) => !data.featured)
+            .map(
+              ({ data }, index) =>
+                index < 10 && (
+                  <Card
+                    href={`/posts/${slugify(data)}/`}
+                    frontmatter={data}
+                    secHeading={false}
+                  />
+                )
+            )
+        }
+      </ul>
+      <div class="all-posts-btn-wrapper">
+        <LinkButton href="/posts">
+          All Posts
+          <svg xmlns="http://www.w3.org/2000/svg"
+            ><path
+              d="m11.293 17.293 1.414 1.414L19.414 12l-6.707-6.707-1.414 1.414L15.586 11H6v2h9.586z"
+            ></path>
+          </svg>
+        </LinkButton>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  /* ===== Hero Section ===== */
+  #hero {
+    @apply pb-6 pt-8;
+  }
+  #hero h1 {
+    @apply my-4 inline-block text-3xl font-bold sm:my-8 sm:text-5xl;
+  }
+  #hero .rss-link {
+    @apply mb-6;
+  }
+  #hero .rss-icon {
+    @apply mb-2 h-6 w-6 scale-110 fill-skin-accent sm:mb-3 sm:scale-125;
+  }
+  #hero p {
+    @apply my-2;
+  }
+  .social-wrapper {
+    @apply mt-4 flex flex-col sm:flex-row sm:items-center;
+  }
+  .social-links {
+    @apply mb-1 mr-2 whitespace-nowrap sm:mb-0;
+  }
+
+  /* ===== Featured & Recent Posts Sections ===== */
+  #featured,
+  #recent-posts {
+    @apply pb-6 pt-12;
+  }
+  #featured h2,
+  #recent-posts h2 {
+    @apply text-2xl font-semibold tracking-wide;
+  }
+  .all-posts-btn-wrapper {
+    @apply my-8 text-center;
+  }
+</style>

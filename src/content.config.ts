@@ -1,20 +1,27 @@
-import { defineCollection } from 'astro:content';
-import { glob } from 'astro/loaders';
-import { z } from 'astro/zod';
+import { SITE } from "@config";
+import { glob } from "astro/loaders";
+import { defineCollection, z } from "astro:content";
 
-const blog = defineCollection({
-	// Load Markdown and MDX files in the `src/content/blog/` directory.
-	loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
-	// Type-check frontmatter using a schema
-	schema: ({ image }) =>
-		z.object({
-			title: z.string(),
-			description: z.string(),
-			// Transform string to Date object
-			pubDate: z.coerce.date(),
-			updatedDate: z.coerce.date().optional(),
-			heroImage: z.optional(image()),
-		}),
+const posts = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/posts" }),
+  schema: ({ image }) =>
+    z.object({
+      author: z.string().default(SITE.author),
+      date: z.date(),
+      title: z.string(),
+      postSlug: z.string().optional(),
+      featured: z.boolean().optional(),
+      draft: z.boolean().optional(),
+      tags: z.array(z.string()).default(["others"]),
+      ogImage: image()
+        .refine(img => img.width >= 1200 && img.height >= 630, {
+          message: "OpenGraph image must be at least 1200 X 630 pixels!",
+        })
+        .or(z.string())
+        .optional(),
+      description: z.string().optional(),
+      canonicalURL: z.string().optional(),
+    }),
 });
 
-export const collections = { blog };
+export const collections = { posts };
