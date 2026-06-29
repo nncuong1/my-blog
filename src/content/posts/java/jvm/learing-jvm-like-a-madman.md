@@ -13,4 +13,4 @@ to deep dive into the JVM — what it is, how it works, and more.
 
 This journey is broken into parts for better readability and to make it easier to follow.
 
-1. So what exactly is the JVM?
+1. [So what exactly is the JVM?](/posts/what-exactly-is-jvm/)

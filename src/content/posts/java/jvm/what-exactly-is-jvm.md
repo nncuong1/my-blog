@@ -1,5 +1,6 @@
 ---
 title: "What exactly is JVM ?"
+postSlug: what-exactly-is-jvm
 author: Cuong
 date: 2026-06-29
 description: "Learning JVM like a madman PART 1"
