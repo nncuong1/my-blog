@@ -15,9 +15,9 @@ When you compile a program written in C, it gets compiled to a "native binary" w
 ## What does JVM do?
 The JVM is a virtual machine that sits on top of the operating system.
 
-Every os/system has their own jvm specific to their api/machine code. Java files are compiled not into machine code but rather into an in-between code called bytecode. The jvm understands java bytecode and then translates that to the os/platform/system specific machine code calls. 
+Every OS/system has its own JVM specific to its API/machine code. Java files are compiled not into machine code but rather into an in-between code called bytecode. The JVM understands Java bytecode and then translates it into the OS/platform/system-specific machine code calls.
 
-Here is an example, first : 
+Here is an example. First:
 ```text
 Windows
    javac
@@ -27,7 +27,7 @@ Bytecode (.class)
 ```
 > The bytecode is defined by the Java Virtual Machine Specification, not by Windows.
 
-Later : 
+Later:
 ```text
 Linux JVM
     │
@@ -46,9 +46,65 @@ Native Windows machine code
 ```
 > Each JVM translates the same bytecode into instructions for its own operating system and CPU.
 
-## Benefits of JVM ?
-So we know what is jvm, and what it do but what acctually the benefit of JVM ? 
-Or the real question is what the benefit of interpreted langueges (java, python, ..) compare to compiled language (c++, golang,...). This answer for this question will be discussion in another blog in furture. For now , i will list some benefits of JVM :  
+## The JVM is more than bytecode translation
+After the sections above, we can simply say that:
+
+```text
+JVM converts bytecode to machine code.
+```
+
+So the answer is not wrong, but it is incomplete. To completely understand the JVM, we will go into some topics:
+
+### What is a virtual machine?
+```text
+A virtual machine is a software system that behaves like a machine.
+```
+
+There are two categories of virtual machines:
+
+A. System Virtual Machine
++ VMware
++ Hyper-V
++ VirtualBox
++ KVM
+
+Each VM has:
++ its own OS
++ memory
++ processes
++ filesystem
+
+B. Application Virtual Machine
+Instead of virtualizing an entire computer, it virtualizes `an execution environment for applications`. For example:
++ JVM
++ .NET CLR
++ Parrot VM
+The JVM doesn't emulate an entire computer. It only provides an environment for running Java programs.
+
+### JVM is specification
+Oracle publishes The Java Virtual Machine Specification (and HotSpot is only one implementation of the JVM) (https://docs.oracle.com/javase/specs/jvms/se21/jvms21.pdf). It defines:
+```text
+                JVM
+
+      ┌─────────────────────┐
+      │ Class Loader        │
+      │ Bytecode Verifier   │
+      │ Interpreter         │
+      │ JIT Compiler        │
+      │ Garbage Collector   │
+      │ Memory Manager      │
+      │ Thread Scheduler    │
+      │ Exception Handling  │
+      │ Reflection Support  │
+      │ Native Interface    │
+      └─────────────────────┘
+```
+
+Bytecode translation is only one component (Interpreter + JIT). The JVM is responsible for the entire lifecycle of a Java program.
+
+### Other benefits of the JVM?
+So we know what the JVM is and what it does, but what is actually the benefit of the JVM?
+Or, the real question is: what are the benefits of interpreted languages (Java, Python, ...) compared to compiled languages (C++, Golang, ...)? The answer to this question will be discussed in another blog in the future. For now, I will list some benefits of the JVM:
 
 1. Platform Independence
 The same .class file runs on Windows, Linux, and macOS without changes.
@@ -69,4 +125,4 @@ The JVM provides:
 * Runtime profiling
 * Portable threading APIs
 
-These are much harder to implement in a pure native executable and this feature which powers by one of the famous java framework : SpringBoot.
+These are much harder to implement in a pure native executable, and they are the features that power one of the most famous Java frameworks: Spring Boot.
