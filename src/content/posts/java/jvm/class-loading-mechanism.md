@@ -12,10 +12,10 @@ tags:
 
 ![alt text](image-1.png)
 
-Today we will dive into the "Class loader subsystem", one of the three components of the JVM. I know that theory is terrible, so our topic today will first walk through the idea of the Class Loader and then look at how the Spring Framework gets benefit from this mechanism. (Component scanning, loading @Configuration classes, loading beans, auto-configuration)
+Today we will dive into the "Class loader subsystem", one of the three components of the JVM. I know that theory is terrible, so our topic today will first walk through the idea of the Class Loader and then look at how the Spring Framework benefits from this mechanism. (Component scanning, loading @Configuration classes, loading beans, auto-configuration)
 
 ## Class Loader subsystem
-The class loader subsystem is responsible for finding a class, reading its bytecode, and making it usable by the JVM. The important thing to remember is that classes are **not** all loaded at startup. A class is loaded **lazily** — on first use — and then walks through three phases:
+The class loader subsystem is responsible for finding a class, reading its bytecode, and making it usable by the JVM. The important thing to remember is that classes are **not** all loaded at startup. A class is loaded **lazily** — on first use — and then goes through three phases:
 
 ```text
 Load → Link (Verify → Prepare → Resolve) → Initialize
@@ -75,7 +75,7 @@ Once a class is loaded, it must be *linked* into the running JVM. Linking has th
 
 **Prepare** — Memory is allocated for `static` fields and they are set to their **default** values — `0` for numbers, `false` for booleans, `null` for references. Note: *not* the values you wrote in code yet. That comes later.
 
-**Resolve** — Symbolic references in the constant pool (names like `"java/lang/String"`) are replaced with direct references to the actual loaded types. This step can be done lazily, the first time a reference is actually used.
+**Resolve** — Symbolic references in the constant pool (names like `"java/lang/String"`) are replaced with direct references to the actual loaded types. This step can be done lazily — the first time a reference is actually used.
 
 ### 3. Initialize
 This is where the class finally "comes alive". The JVM runs the class's static initializers and assigns `static` fields their **real** values — the ones you actually wrote.
@@ -104,7 +104,7 @@ Initialization is triggered the first time the class is *actively used*, for exa
 
 > Prepare gives static fields their *default* values; Initialize gives them their *real* values and runs static blocks — and it only happens on first active use.
 
-## How Spring Framework get benefit from Class loader mechanism?
+## How does the Spring Framework benefit from the Class loader mechanism?
 Everything above might feel academic, but it is exactly the foundation Spring is built on. Spring leans heavily on **dynamic class loading + reflection** — the JVM's ability to load and inspect classes at runtime rather than at compile time. Here are four places it shows up.
 
 **1. Component scanning** — When you use `@ComponentScan` (implied by `@SpringBootApplication`), Spring walks the classpath under your base package, reads each class's metadata, and finds the ones annotated with `@Component`, `@Service`, `@Repository`, `@Controller`, etc. It then loads only those candidates and registers them as bean definitions. No class loading + reflection → no scanning.
