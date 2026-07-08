@@ -18,7 +18,7 @@ The JVM specification describes processes, not architectural subsystems.
 
 So for convenience, architectural overview, and educational purposes (most blogs on the internet still use this term), the title of my blog uses "Class loader subsystem", but throughout this blog we will focus specifically on the three-step process of the JVM. This foundation will help you understand application performance, optimize systems, and debug class loading issues more effectively.
 
-![alt text](jvm-class-loader-overview.png)
+![alt text](images/jvm-class-loader-overview.png)
 
 The real "meat" of the JVM start-up process begins here, and it involves several key steps:
 ```text
@@ -75,16 +75,16 @@ Why does this matter? **Security and consistency.** Because every load goes up t
 
 To better understand the process of Class Loading, we need to take a look at HelloWorld as the JVM would see it:
 
-![alt text](<helloworld.png>)
+![alt text](<images/helloworld.png>)
 
 All classes, at some point, extend `java.lang.Object`. In order for the JVM to load `HelloWorld`, it first needs to load all the classes that `HelloWorld` explicitly and implicitly depends on, for example `java.lang.Object`:
-![alt text](<classObject.png>)
+![alt text](<images/classObject.png>)
 Note the important method `public final native Class<?> getClass()`, which references another class: `java.lang.Class`. Inside the `Object` class, we see it implements several interfaces, as well as some of the same interfaces as `java.lang.String`: `java.io.Serializable` and `java.lang.constant.Constable`.
-![alt text](<class.png>)
+![alt text](<images/class.png>)
 
 After looking at the JVM logs (by running the precompiled bytecode: `java -Xlog:class+load=info:file=jvm_run.log HelloWorld`), we see that the interfaces are once again loaded in the order they are defined before `java.lang.Class` is loaded, except for `java.io.Serializable` and `java.lang.constant.Constable`, as they had already been loaded while loading `java.lang.String`.
 
-![alt text](<jvmlog.png>)
+![alt text](<images/jvmlog.png>)
 
 I also found that the JVM loads some 445 classes in the `HelloWorld` scenario — it's doing a lot of work, right?
 
