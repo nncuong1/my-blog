@@ -3,7 +3,12 @@ import { glob } from "astro/loaders";
 import { defineCollection, z } from "astro:content";
 
 const posts = defineCollection({
-  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/posts" }),
+  loader: glob({
+    // Exclude CLAUDE.md steering files — they live alongside posts as
+    // agent context, not as publishable content.
+    pattern: ["**/*.{md,mdx}", "!**/CLAUDE.md"],
+    base: "./src/content/posts",
+  }),
   schema: ({ image }) =>
     z.object({
       author: z.string().default(SITE.author),
