@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# reference PDFs (local knowledge base — keep binaries out of git,
+# but DO commit the small text index/steering files under reference/)
+reference/pdfs/
