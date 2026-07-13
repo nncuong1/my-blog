@@ -71,3 +71,21 @@ In general computer architecture terms, the program counter (PC) register keeps 
 
 ### Native Method Stack
 Native method stacks are similar to JVM stacks, except that JVM stacks serve Java methods while native method stacks serve native methods. In the HotSpot virtual machine implementation, the native method stack and the JVM stack are combined. As with the JVM stack, a `StackOverflowError` or an `OutOfMemoryError` can be thrown.
+
+
+## III. The difference between the stack and the heap
+So we know what the stack and heap are in sections above, but what exactly is the difference between the Stack and the Heap, why does the JVM need both instead of just collapsing them into one place?
+
+### Lifetime : LIFO vs "live as long as something points at it"
+
+Because in the stack, stack frames follow a strict **Last-In, First-Out—LIFO—discipline**, so all data in the stack is tied directly to method invocation, they come alive when a method is invoked, and are removed when that invocation completes. No garbage collector is needed to search for individual local variables.
+
+But we also have data which can live outside of a method - you can return it from a method, assign it to a field, hand it to another thread or a static object (you declare a static **Map** or **List** in a constants file). This is where the heap comes in. Its lifetime is governed not by who created it but by who still references it. That's exactly why the heap "must provide a garbage collection mechanism" and the stack does not. There is no simple LIFO rule that tells the JVM exactly when an object is no longer needed, the heap needs a Garbage Collector that starts from a set of roots (the live stack frames, static fields, etc.) and marks every object it can reach by following references. Anything it can't reach — even if other dead objects still point at it — is garbage.
+
+The deeper idea is this:
+
+> If a piece of execution state has a lifetime strictly tied to a scope or call structure, it can often be reclaimed through simple structural rules.
+
+> If data can outlive the scope that created it, the runtime needs another ownership or lifetime-management mechanism.
+
+That idea appears again and again across languages and runtimes.
