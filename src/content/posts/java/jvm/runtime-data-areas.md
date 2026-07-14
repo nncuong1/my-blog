@@ -39,7 +39,7 @@ Once a class's bytecode is loaded by a JVM class loader, it’s passed to the JV
 - The size of a heap can be fixed or dynamic.
 - A heap must provide a garbage collection mechanism to reclaim unused space; this is where the garbage collector comes into the picture. Claiming the memory back is done automatically by the garbage collector (GC). This is one of the best features of Java. If the allocated memory is not sufficient at run-time, the JVM can throw `OutOfMemoryError`.
 
-Everything above is what the **JVMS** guarantees about the heap — deliberately abstract. How the heap is *physically organized* (generational layout, PermGen → Metaspace, GC algorithms like G1/ZGC) is a **HotSpot implementation detail the spec doesn't mandate**, and it's a deep-dive in its own right. We'll cover it next in [Heap Structure & Garbage Collection](/posts/jvm-heap-and-garbage-collection/).
+Everything above is what the **JVMS** guarantees about the heap — deliberately abstract. How the heap is *physically organized* (generational layout, PermGen → Metaspace, GC algorithms like G1/ZGC) is a **HotSpot implementation detail the spec doesn't mandate**, and it's a deep-dive in its own right. We'll cover it next in [Heap Structure & Garbage Collection](/posts/heap-structure-and-garbage-collection/).
 
 > **Connecting back to Part 2:** every trigger that *actively uses* a class — `new Config()`, reflective instantiation, the Spring beans and CGLIB proxies from the [last post](/posts/class-loader-subsystem-in-jvm/) — produces an **object**, and every one of those objects is allocated here on the heap. The division of labour is clean: class *metadata* goes to the **method area**, class *instances* go to the **heap**.
 
