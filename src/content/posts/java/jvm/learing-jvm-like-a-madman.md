@@ -16,3 +16,4 @@ This journey is broken into parts for better readability and to make it easier t
 1. [So what exactly is the JVM ?](/posts/what-exactly-is-jvm/)
 2. [Class loader subsystem in JVM ?](/posts/class-loader-subsystem-in-jvm/)
 3. [JVM Runtime Data Areas (Memory Model)](/posts/jvm-runtime-data-areas/)
+4. [Heap structure and garbage collection](/posts/heap-structure-and-garbage-collection/)
