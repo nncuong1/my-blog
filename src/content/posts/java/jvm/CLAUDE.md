@@ -82,6 +82,24 @@ safe publication, AQS, and CAS. When a post asserts a hard memory-model
 (printed p.337) is the readable companion. Same navigation discipline: consult
 the index, convert the page, read a ≤20-page window — don't scan the whole book.
 
+## Garbage collection & heap tuning
+
+JVMS says **nothing** about GC algorithms — only that a garbage-collected heap
+exists (§2.5.3). For the heap-structure/GC posts (e.g.
+`heap-structure-and-garbage-collection.md`), use Oracle's official tuning guide:
+
+- **PDF:** `reference/pdfs/hotspot-virtual-machine-garbage-collection-tuning-guide.pdf`
+  — *HotSpot Virtual Machine Garbage Collection Tuning Guide*, Oracle, Java 21
+  (57 pages). Covers G1 (the default), the generational model, TLABs, the
+  Serial/Parallel/Z collectors, ergonomics, and the tuning flags.
+
+This is a **HotSpot implementation** source (tier 2), not the spec: everything in
+it is HotSpot behavior, not mandated by JVMS. Say so explicitly ("the spec
+guarantees a garbage-collected heap; HotSpot's G1 additionally does X"). It's a
+good match for the Java 21 baseline, so prefer it over older GC folklore for
+current defaults and flag names. No navigation index exists yet — the guide is
+short, so read the relevant window directly.
+
 ## Other references
 
 Other PDFs in `reference/pdfs/` (Effective Java, etc.) are available as secondary
