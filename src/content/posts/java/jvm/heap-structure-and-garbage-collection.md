@@ -22,7 +22,7 @@ So today we'll start with some GC terminology and then dig into the structure of
 
 GC matters for a few key reasons:
 
-**Productivity and stability** without automatic memory management, code needs a memory ownership contract:
+**Productivity and stability**: without automatic memory management, code needs a memory ownership contract:
 -   Who allocates memory?
 -   Who releases it?
 -   Does ownership transfer when an object is passed to another library?
@@ -35,7 +35,7 @@ Different libraries may use different ownership conventions. Combining them beco
 
 This makes large ecosystems easier to compose. Objects can cross framework and library boundaries without every component agreeing on a manual deallocation protocol.
 
-**Complex object graphs**, Complex applications usually do not hold memory as one simple flat array. They may contain:
+**Complex object graphs**: complex applications usually do not hold memory as one simple flat array. They may contain:
 - trees,
 - graphs,
 - caches,
@@ -46,7 +46,7 @@ This makes large ecosystems easier to compose. Objects can cross framework and l
 
 As these structures become interconnected, manual lifetime management becomes increasingly difficult.
 
-**Concurrent algorithms**, Some concurrent algorithms naturally create immutable or temporary objects and simply stop referencing them later. Automatic memory management makes these patterns practical because the algorithm does not need an explicit reclamation protocol for every object.
+**Concurrent algorithms**: some concurrent algorithms naturally create immutable or temporary objects and simply stop referencing them later. Automatic memory management makes these patterns practical because the algorithm does not need an explicit reclamation protocol for every object.
 
 ### 1.2 GC terminology
 
@@ -94,7 +94,7 @@ For example, after moving objects, the JVM must ensure references do not lead ap
 
 #### 1.2.5 Incremental operation
 
-Incremental is when you could take a bigger a big problem like that and you can chunk it into pieces and you can say I'll do this much and at the end of the increment I can let the program run (a large operation is divided into smaller safe chunks) : 
+Incremental is when you could take a big problem like that and chunk it into pieces and you can say I'll do this much and at the end of the increment I can let the program run (a large operation is divided into smaller safe chunks) : 
 
 ``` text
 Application: [RUN][RUN][RUN][RUN]
@@ -134,7 +134,7 @@ slot 1 = 0x2000
 slot 2 = 0x3000
 ```
 
-0x1000 is found but what does 0x1000 mean? is it an integer whose value happens to be 4096 (4096 decimal = 0x1000) or a reference to the object at address 0x1000. A conservative GC does not know the type of this slot and therefore it conservatively assumes:
+0x1000 is found but what does 0x1000 mean? Is it an integer whose value happens to be 4096 (4096 decimal = 0x1000) or a reference to the object at address 0x1000. A conservative GC does not know the type of this slot and therefore it conservatively assumes:
 ```text
 slot 0
    |
@@ -335,4 +335,96 @@ After collection:
 new active space: [A][C][ free ... ]
 ```
 
-`B` and `D` are not individually destroyed. They are simply never copied.
+## II. Heap structure - How is the Heap divided ?
+Heap is not a flat, uniform space. It is divided into multiple areas, each with a different fate, and the GC treats each area very differently. 
+```text
+Why is it divided into so many areas ?
+```
+To answer the question, let's take a look at the section above, where we discussed GC and how the GC knows that an object is "garbage" (1.3). We see the Mark-Sweep-Compact alogirthm, but generational GC is based on the observation (Weak generational hypothesis):
+> Most allocated objects die young.
+> The relatively small number of objects that survive their early life tend to live for a long time.
+
+Think about objects that are created, used for a few lines of code, and then discarded: temporary variables in loops, `StringBuilder` instances used to build a string, temporary collections, request objects, and intermediate values. On the other hand, some objects survive for a long time: caches, connection pools, configuration objects, and infrastructure objects that
+remain alive for most of the application's lifetime.
+
+Based on it, the JVM traditionally divides the Heap into two major areas:
+- **Young Generation** for newly created objects.
+- **Old Generation**, also called **Tenured Generation**, for long-lived objects.
+
+![Heap split into Young Generation (Eden, S0, S1) and Old Generation](<images/young-generation.png>)
+
+### 2.1 Young Generation
+The Young Generation is the memory region where all newly created objects are allocated and most objects are already dead and only a small number survive. The cheapest strategy is therefore not Sweep-Compact but **Copying collector**, also called **Mark-Copy**. (1.3.4)
+
+The idea is very practical: instead of carefully scanning and reclaiming every dead object, just find the few survivors, copy them somewhere else, and reset the entire old area in one operation. The dead objects disappear implicitly when the region is cleared; there is no need to sweep them one by one.
+
+Traditionally, the Young Generation is divided into three parts: one large **Eden** space and two smaller **Survivor** spaces, usually called **S0** and **S1**. So a simplified object lifecycle looks like this:
+- Newly created objects normally land in Eden first. Think of Eden as a delivery room: every new object starts there.
+- When Eden fills up, a lightweight collection called a **Minor GC** occurs. The collector finds the live objects in Eden and in the currently used Survivor space, copies them into the empty Survivor space, and then resets Eden and the old Survivor space.
+- Each time an object survives one of these collections, its age increases.
+- Across Minor GC cycles, surviving objects are copied back and forth between S0 and S1 while their ages continue to increase.
+- When an object reaches a certain age threshold, the JVM decides that it is probably long-lived and **promotes** it to the Old Generation. In HotSpot the maximum tenuring threshold is `15` — the age is stored in only 4 bits of the object header, so 15 is the hard ceiling — and the threshold can be lowered with `-XX:MaxTenuringThreshold` (e.g. `2`).
+
+```text
+`new → Eden → Eden fills → Minor GC → if still alive, copy to Survivor → survive enough GC cycles → promote to Old Generation`
+```
+
+### 2.2 Old Generation
+This is where long-lived objects reside—those that have graduated from the Young Generation and where Mark-Sweep-Compact-style thinking becomes useful.
+
+The Old Generation has the opposite population profile from the Young Generation: most objects are still alive, and only a relatively small number are dead so : 
+=> Using Copying here would be wasteful. The collector would have to copy almost the entire region and would need enough destination space to hold nearly all of the Old Generation.
+=> So, conceptually, an old-generation collector can keep objects in place, **Mark** the live objects, **Sweep** the scattered dead objects, and occasionally **Compact** the region to reduce fragmentation. (1.3)
+
+A simple rule to remember is:
+> **Copying is valuable when the survival rate is low, as in the Young Generation.**
+> **Mark-Sweep-Compact-style collection is valuable when the survival rate is high, as in the Old Generation.**
+
+#### What happens when the Old Generation is full?
+When the Old Generation fills up, we are no longer talking about a lightweight Minor GC. Depending on the collector and terminology, old-generation collection may be described as a **Major GC**. More
+expensive still is a **Full GC**, which involves the whole Heap and may also involve class metadata cleanup.
+
+These collections are expensive largely because they can involve what application developers fear most: **Stop-The-World (STW)** pauses. During an STW pause, application threads are stopped while the JVM
+performs GC work.
+
+Minor GC is also stop-the-world in the traditional HotSpot collectors (Serial, Parallel, G1) — the entire young collection runs inside the pause — but that pause is short because the Young Generation is relatively small and the collector only needs to copy a small number of surviving objects. Only the modern concurrent collectors (ZGC, Shenandoah) push most of this work off the pause.
+
+A Full GC over a multi-gigabyte Heap can cause a much more noticeable pause---from hundreds of milliseconds to seconds in some workloads. That may be enough to stall a request, trigger a health-check timeout, or make an orchestrator believe a service is unhealthy and restart it.
+
+This is why so much garbage-collector engineering focuses on one question: 
+> **how can we reclaim memory while minimizing Stop-The-World time ?**
+I won't go into detail on each GC (that will be a separate post) because the current post is already long, but in short we can see that 
+- Serial GC uses a simpler single-threaded approach.
+- Parallel GC uses multiple GC threads to finish collection work faster. 
+- G1 divides the Heap into many regions and tries to perform collection in controlled increments. 
+- Modern low-latency collectors such as ZGC and Shenandoah move much more work concurrently with the application and aim to keep pauses extremely small.
+
+> Each of these approaches is really just a different strategy for handling one long-standing challenge — the point where your program has to pause everything it's doing.
+
+## III. Conclusion
+After sections I and II we know the Heap structure and the strength of GC in memory management. But as a developer, relying entirely on the GC without being careful in your own code is also misleading. 
+
+There is a very common misconception that Java has a GC, therefore Java applications cannot have memory leaks. That is false. The GC can only reclaim objects that are no longer reachable.
+
+If your own code accidentally keeps a reference to objects that should have been discarded---for example, a static `Map` that keeps receiving entries and never removes them, a listener that is registered but never unregistered, or a `ThreadLocal` that is not cleaned up in a thread-pool environment---then those objects are still reachable from the GC's point of view => The GC sees that the anchor rope is still attached, so it politely leaves the objects alone.
+
+As a result, the Old Generation can slowly grow. Full GC may happen more and more frequently while reclaiming very little memory, until the process eventually reaches the `-Xmx` limit and throws:
+
+``` text
+OutOfMemoryError: Java heap space
+```
+
+The dangerous part is that this kind of leak may never appear during a short test. It accumulates quietly, drop by drop, until a service that has been running perfectly for two weeks suddenly fails at 2 a.m.
+
+The GC frees you from manually calling `free()`, but it absolutely does not free you from thinking about which objects should remain alive and which objects should be allowed to die.
+
+That is why understanding GC has never been about memorizing the Eden-Survivor-Tenured diagram. Later, you may tune G1, use ZGC, or move to a runtime with a completely different GC model. Names such as S0 and S1 may disappear with implementation details and versions. What remains is the underlying way of thinking:
+- Objects have lifecycles.
+- Most objects die young.
+- A small number survive for a long time.
+- When the live set is small, copying survivors can be very efficient.
+- When the live set is large, collecting mostly in place may be more appropriate.
+- Every garbage collector is ultimately wrestling with two old questions: **does anyone still truly need this data, and who is responsible for allowing it to be reclaimed at the right time?**
+
+Once you understand that, seeing repeated Full GC events in a log at midnight should not immediately make you increase `-Xmx` and hope for the best. The better question is:
+> **These objects should have died a long time ago. What in my code is still stubbornly holding the anchor rope?**
