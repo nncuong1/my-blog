@@ -190,3 +190,149 @@ application-observed stop time
 A thread can be slow to reach a safepoint for reasons that have nothing to do with GC — a long counted loop the JIT compiled without a safepoint poll, a big array copy running uninterruptibly, or the OS simply having swapped the thread out. Meanwhile the threads that already parked sit idle, so this waiting time is a real pause even though *no collecting has happened yet*.
 
 That's why a GC log that measures only collector work may not explain the entire application pause: it reports the "GC work" box above, but the application felt the whole line.
+
+### 1.3 Core collection mechanisms
+There are three fundamental jobs of a **precise** collector:
+- Identify live objects.
+- Recycle memory occupied by dead objects.
+- Move objects when necessary.
+
+Different algorithms combine these jobs differently, for example : 
+- Mark/Sweep/Compact (for Old Generations)
+- Copying collector (for Young Generations)
+
+#### 1.3.1 Marking
+How does the GC know that an object is "garbage"? Most people think that the GC counts how many references point to an object like reference counting. But GC does not work that way, because reference counting has a classic fatal weakness: two objects may reference each other in a cycle
+```text
+---A holds B 
+B holds A---
+```
+even though nothing else in the application uses either of them. Their reference counts would still be `1`, so they would remain alive forever even though they are effectively garbage.
+
+Instead, there is a much cleaner principle called **reachability** or marking. Marking is the good magic thing that lets us know where the live stuff is and where the dead stuff is and where you don't need to worry about cyclical things. It starts from a set of roots called **GC Roots**---local references on the stacks of running threads, static fields, references from JNI, and so on. From those roots, the GC follows reference links through the object graph and marks everything it can reach as "alive."
+
+After traversal finishes, any object that cannot be reached from any GC Root is considered garbage. It does not matter if those unreachable objects reference one another in complicated cycles. Conceptually:
+
+``` text
+GC Roots
+   |
+   +--> A --> B --> D
+   |
+   +--> C
+
+X --> Y
+^     |
++-----+
+```
+
+The collector traverses:
+
+``` text
+A, B, D, C
+```
+
+`X` and `Y` are not reachable from roots, so their cycle does not make them alive.
+
+**Complexity**: The complexity of marking is linear to the live set or the **live object graph**, not simply total heap capacity. A larger heap does not automatically mean proportionally more marking
+work if the live set remains unchanged.
+
+#### 1.3.2 Sweeping
+After marking:
+
+``` text
+marked   -> live
+unmarked -> dead
+```
+A sweeper scans memory and makes dead regions reusable, example:
+``` text
+Before:
+[A live][B dead][C live][D dead]
+
+After sweep:
+[A live][ free ][C live][ free ]
+```
+The collector may add free regions to free lists.
+**Complexity** : Sweeping scans heap regions, so its work is related to the amount of
+heap memory being swept. this differs from live-set-oriented algorithms.
+
+#### 1.3.3 Fragmentation and Compaction
+Mark-Sweep alone creates an annoying problem, After repeated allocation and reclamation:
+
+``` text
+[A][free][B][free][C][free][D]
+```
+
+Total free memory may be large, but no individual hole may be large enough for a requested object. Example:
+
+``` text
+free = 20 MB total
+largest contiguous hole = 2 MB
+requested array = 10 MB
+```
+
+The JVM cannot place the array in ten separate holes because one Java object requires a suitable contiguous object layout from the JVM's perspective. This is **fragmentation** and this is the reason we need **Compaction**
+
+**Compaction** moves live objects together toward one side of the memory region, merging all scattered free gaps into one contiguous free area on the other side. After compaction, allocating a new object can once again be almost as simple as stack-style allocation: move a pointer at the
+boundary of the free area.
+
+``` text
+Before:
+[A][free][B][free][C][free]
+
+After:
+[A][B][C][       free       ]
+```
+
+But copying the object's bytes may be easy. The difficult part (Remapping) is ensuring references to the object are handled correctly. Move an object:
+
+``` text
+B: address 0x1000
+        |
+        v
+B: address 0x5000
+```
+
+Update references:
+
+``` text
+A.field ---> 0x1000
+```
+must become:
+``` text
+A.field ---> 0x5000
+```
+This is why object relocation and reference remapping are central GC problems.
+
+**Complexity** of compaction is linear with marking because it does not need to process dead objects individually. It mainly needs to move live objects and fix references to live objects.
+
+#### 1.3.4 Copying collector
+A major advantage of Mark-Sweep-Compact is that it does not inherently require a second space equal to the entire source space. Copying collector, on the other hand, divides memory conceptually into:
+
+``` text
+From Space
+To Space
+```
+
+Initially:
+
+``` text
+From: [A][B][C][D]
+To:   [             ]
+```
+
+Suppose `A` and `C` are reachable.
+
+The collector traverses from roots and copies reachable objects:
+
+``` text
+From: [A][B][C][D]
+To:   [A][C]
+```
+
+After collection:
+
+``` text
+new active space: [A][C][ free ... ]
+```
+
+`B` and `D` are not individually destroyed. They are simply never copied.
