@@ -27,7 +27,6 @@ The parallel collector is intended for applications with medium-sized to large-s
 
 ## III. Garbage-First (G1) Garbage Collector
 
-### What is it?
 G1 is the **default collector since Java 9**, selected by default on most hardware and operating system configurations, or explicitly enabled with `-XX:+UseG1GC`.
 
 It's a generational, **mostly concurrent**, region-based collector. Instead of splitting the heap into a few large contiguous generations, G1 partitions it into ~2048 equally sized **regions** and treats "young" and "old" as labels on regions rather than fixed locations. It does most of its marking work concurrently with the application, then evacuates a chosen *subset* of regions per pause — collecting the regions with the most garbage first (hence "Garbage-First") — to keep pause times bounded. Its central promise is to meet a **pause-time goal** (`-XX:MaxGCPauseMillis`, default 200ms) with high probability while still delivering good throughput.
@@ -49,7 +48,6 @@ It's a generational, **mostly concurrent**, region-based collector. Instead of s
 
 ## IV. The Z Garbage Collector (ZGC)
 
-### What is it?
 ZGC is a **scalable, low-latency** collector. It was introduced experimentally in Java 11 (JEP 333), became production-ready in Java 15 (JEP 377), and gained a generational mode in Java 21 (JEP 439). Enable it with `-XX:+UseZGC` (add `-XX:+ZGenerational` for the generational mode, which is opt-in on Java 21 and slated to become the default).
 
 Where G1 keeps pauses *bounded*, ZGC aims to make them *disappear*: it does essentially **everything concurrently** with the application — marking, relocation/compaction, and reference processing — leaving only tiny, fixed-cost stop-the-world work (scanning thread roots). It achieves this using **colored pointers** (GC metadata stored inside the object reference) and **load barriers** (a check that fires when the application reads a reference, fixing up any pointer to a relocated object on the fly). The result is pause times that stay **sub-millisecond and do not grow with heap size or live-set size**.
