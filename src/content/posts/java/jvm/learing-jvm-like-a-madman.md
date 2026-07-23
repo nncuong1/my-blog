@@ -18,6 +18,7 @@ This journey is broken into parts for better readability and to make it easier t
 3. [JVM Runtime Data Areas (Memory Model)](/posts/jvm-runtime-data-areas/)
 4. [Heap structure and garbage collection](/posts/heap-structure-and-garbage-collection/)
 5. [The GC collectors](/posts/the-gc-collectors/)
+6. [JVM Execution Engine : From Bytecode to Optimised Machine Code](/posts/jvm-execution-engine)
 
 ### Bonus
 
