@@ -71,7 +71,7 @@ Understanding what the JVM automatically chooses is the first step toward making
 
 To *see* ergonomics in action we don't need a real application. We just start a JVM and ask it one question: **"what did you decide?"**. The interesting part is that the answer changes depending on the size of the machine the JVM runs on. So the plan is to run the same JVM on machines of different sizes and watch its decisions change.
 
-We won't buy several laptops for this. Instead we fake the machine size with **Docker**. A container lets us cap how much CPU and memory the JVM is allowed to see, so one laptop can pretend to be a tiny 128MB box or a roomy 4GB box. The image we use is an Ubuntu-based **Temurin JDK 21**, so the JVM inside the container behaves like the one on the laptop.
+We won't buy several laptops for this. Instead we fake the machine size with **Docker**. A container lets us cap how much CPU and memory the JVM is allowed to see, so one laptop can pretend to be a tiny 128MB box or a roomy 4GB box. The image we use is an Ubuntu-based **Temurin JDK 21** (the version my laptop currently runs, but you can change it).
 
 You can find the full script in the [jvm-ergonomics](https://github.com/nncuong1/jvm-ergonomics) repository. Here is what each piece does.
 
