@@ -22,4 +22,4 @@ This journey is broken into parts for better readability and to make it easier t
 
 ### Bonus
 
-- [G1 Garbage Collector deep dive](/posts/g1-garbage-collector-deep-dive/)
+- [JVM default ergonomics](/posts/jvm-default-ergonomics/)
