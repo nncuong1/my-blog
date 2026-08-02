@@ -26,3 +26,9 @@ pnpm-debug.log*
 # reference PDFs (local knowledge base — keep binaries out of git,
 # but DO commit the small text index/steering files under reference/)
 reference/pdfs/
+
+# Spring reference docs + source: sparse clones of upstream repos, pinned to a
+# tag. Third-party and fully reproducible — run reference/spring/sync.sh.
+# Ignore everything under reference/spring/ except the sync script itself.
+reference/spring/*
+!reference/spring/sync.sh
