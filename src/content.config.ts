@@ -4,9 +4,9 @@ import { defineCollection, z } from "astro:content";
 
 const posts = defineCollection({
   loader: glob({
-    // Exclude CLAUDE.md steering files — they live alongside posts as
-    // agent context, not as publishable content.
-    pattern: ["**/*.{md,mdx}", "!**/CLAUDE.md"],
+    // Exclude AGENTS.md steering files (and their CLAUDE.md symlinks) — they
+    // live alongside posts as agent context, not as publishable content.
+    pattern: ["**/*.{md,mdx}", "!**/AGENTS.md", "!**/CLAUDE.md"],
     base: "./src/content/posts",
   }),
   schema: ({ image }) =>
