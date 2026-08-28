@@ -32,3 +32,9 @@ reference/pdfs/
 # Ignore everything under reference/spring/ except the sync script itself.
 reference/spring/*
 !reference/spring/sync.sh
+
+# Kafka + Spring Kafka source: sparse clones pinned to a tag, made by
+# reference/kafka/sync.sh. Only the two clone folders are dropped — the sync
+# script and the index notes next to them are committed.
+reference/kafka/apache-kafka/
+reference/kafka/spring-kafka/
